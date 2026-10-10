@@ -143,7 +143,7 @@ function viewHome(){
     <div class="eyebrow"><span class="reg"><i></i><i></i><i></i><i></i></span>Escuela de iniciación al marketing</div>
     <h1 class="brand">Mi Primer <span>Click</span> MKT</h1>
     <p class="lede">Aprende a hacer trabajos de agencia y community manager con apps gratis, paso a paso.</p>
-    ${deferredInstall?`<div class="install"><span>Instálala en tu celular para abrirla como app.</span><button id="btnInstall">Instalar</button></div>`:""}
+    ${installBox()}
     <div class="search"><label for="q">¿Qué necesitas hacer hoy?</label>
       <input id="q" type="search" value="${esc(query)}" placeholder="Ej: conectar redes, crear imagen, programar…" autocomplete="off"></div>
     <div class="quick">${quick.map(([t,k])=>`<button data-q="${k}">${t}</button>`).join("")}</div>
@@ -243,6 +243,22 @@ document.addEventListener("click", async e=>{
 });
 document.addEventListener("input", e=>{ if(e.target.id==="q"){ query=e.target.value; const pos=e.target.selectionStart; clearTimeout(render.t); render.t=setTimeout(()=>{ render(); const i=$("#q"); if(i){ i.focus(); i.setSelectionRange(pos,pos);} },180); } });
 window.addEventListener("hashchange", render);
+function installBox(){
+  const standalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone;
+  if(standalone) return "";
+  if(deferredInstall) return `<div class="install"><span>Instálala en tu celular para abrirla como app.</span><button id="btnInstall">Instalar</button></div>`;
+  const ua = navigator.userAgent;
+  const ios = /iPhone|iPad|iPod/i.test(ua) || (navigator.platform==="MacIntel" && navigator.maxTouchPoints>1);
+  const inApp = /FBAN|FBAV|Instagram|WhatsApp|Line\/|TikTok|musical_ly|wv\)/i.test(ua);
+  const android = /Android/i.test(ua);
+  let msg = "";
+  if(inApp) msg = `Para instalarla, abre este link en ${ios?"Safari":"Chrome"}: toca los 3 puntos (⋮ o ···) y elige <b>“Abrir en el navegador”</b>.`;
+  else if(ios && !/Safari/i.test(ua) || ios && /CriOS|FxiOS|EdgiOS/i.test(ua)) msg = `En iPhone se instala desde <b>Safari</b>: abre este link en Safari, toca <b>Compartir</b> (cuadrado con flecha ↑) y luego <b>“Agregar a inicio”</b>.`;
+  else if(ios) msg = `Para instalarla: toca <b>Compartir</b> (cuadrado con flecha ↑, abajo) y luego <b>“Agregar a inicio”</b>.`;
+  else if(android) msg = `Para instalarla: toca el menú <b>⋮</b> (arriba a la derecha) y elige <b>“Instalar app”</b> o <b>“Agregar a pantalla principal”</b>.`;
+  else return "";
+  return `<div class="install"><span>📲 ${msg}</span></div>`;
+}
 window.addEventListener("beforeinstallprompt", e=>{ e.preventDefault(); deferredInstall=e; if(!location.hash||location.hash==="#/") render(); });
 render();
 if("serviceWorker" in navigator) window.addEventListener("load", ()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
